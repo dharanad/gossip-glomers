@@ -5,3 +5,18 @@ On a single node, we can use atomic increment and every time we as asked for id 
 Even this approach has limit since at max we can vend 2^64 - 1
 
 docker run --name pg-dist-sys -p 5432:5432 -e POSTGRES_PASSWORD=password -d postgres:14
+
+
+distributed unique-id generator
+
+#### Database Schema
+```sql
+create database dist_sys;
+
+create table ids
+(
+    id       serial
+        primary key,
+    sudo_val varchar(1)
+);
+```
