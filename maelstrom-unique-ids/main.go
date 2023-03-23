@@ -1,19 +1,33 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	maelstrom "github.com/jepsen-io/maelstrom/demo/go"
 	"log"
-	"sync/atomic"
 )
 
 func main() {
+	dbUrl := getConnectionString("postgres", "password", "localhost", "dist_sys", 5432)
+	db, err := sql.Open("pgx", dbUrl)
+	if err != nil {
+		log.Fatalf("Error opening database connection. %v", err)
+	}
+	if pErr := db.Ping(); pErr != nil {
+		log.Fatalf("Error connecting to db. %v", err)
+	}
 	n := maelstrom.NewNode()
-	var idGenerator IdGenerator = &UniqueIdGeneratorService{}
+	var idGenerator IdGenerator = NewUniqueIdGeneratorService(db)
 	n.Handle("generate", NewIdGeneratorHandler(idGenerator, n))
 	if err := n.Run(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func getConnectionString(username, password, host, dbName string, port int) string {
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=disable", username, password, host, port, dbName)
 }
 
 func NewIdGeneratorHandler(idGenerator IdGenerator, n *maelstrom.Node) maelstrom.HandlerFunc {
@@ -33,9 +47,13 @@ type IdGenerator interface {
 }
 
 type UniqueIdGeneratorService struct {
-	count int64
+	db *sql.DB
+}
+
+func NewUniqueIdGeneratorService(db *sql.DB) *UniqueIdGeneratorService {
+	return &UniqueIdGeneratorService{db: db}
 }
 
 func (u *UniqueIdGeneratorService) Generate() int64 {
-	return atomic.AddInt64(&u.count, 1)
+	panic("implement me")
 }
