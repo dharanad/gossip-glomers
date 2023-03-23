@@ -81,3 +81,14 @@ func (d *IdsDal) GetId(ctx context.Context) (int64, error) {
 	}
 	return id, nil
 }
+
+func (d *IdsDal) GetStringId(ctx context.Context) (string, error) {
+	var id string
+	err := d.db.QueryRowContext(ctx, "select uuid_in(md5(random()::text || random()::text)::cstring) as id").Scan(&id)
+	if err == sql.ErrNoRows {
+		return "", err
+	} else if err != nil {
+		return "", err
+	}
+	return id, nil
+}
